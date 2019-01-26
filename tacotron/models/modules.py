@@ -2,7 +2,7 @@ import tensorflow as tf
 from tacotron.models.zoneout_LSTM import ZoneoutLSTMCell
 from tensorflow.contrib.rnn import LSTMBlockCell
 from hparams import hparams
-
+from tensorflow.contrib.rnn import GRUCell
 from tacotron.utils.util import shape_list
 
 def VAE(inputs, input_lengths, filters, kernel_size, strides, num_units, is_training, scope):
