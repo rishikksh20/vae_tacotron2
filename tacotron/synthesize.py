@@ -6,7 +6,7 @@ from tacotron.synthesizer import Synthesizer
 import tensorflow as tf 
 import time
 from tqdm import tqdm
-
+from tacotron.utils.audio import load_wav, melspectrogram
 
 def run_eval(args, checkpoint_path, output_dir):
 	print(hparams_debug_string())
@@ -14,7 +14,8 @@ def run_eval(args, checkpoint_path, output_dir):
 	synth.load(checkpoint_path)
 	eval_dir = os.path.join(output_dir, 'eval')
 	log_dir = os.path.join(output_dir, 'logs-eval')
-
+	wav = load_wav(args.reference_audio)
+	mel = melspectrogram(wav).transpose()
 	#Create output path if it doesn't exist
 	os.makedirs(eval_dir, exist_ok=True)
 	os.makedirs(log_dir, exist_ok=True)
@@ -24,7 +25,7 @@ def run_eval(args, checkpoint_path, output_dir):
 	with open(os.path.join(eval_dir, 'map.txt'), 'w') as file:
 		for i, text in enumerate(tqdm(hparams.sentences)):
 			start = time.time()
-			mel_filename = synth.synthesize(text, i+1, eval_dir, log_dir, None)
+			mel_filename = synth.synthesize(text, mel, i+1, eval_dir, log_dir, None)
 
 			file.write('{}|{}\n'.format(text, mel_filename))
 	print('synthesized mel spectrograms at {}'.format(eval_dir))
@@ -56,7 +57,7 @@ def run_synthesis(args, checkpoint_path, output_dir):
 			text = meta[5]
 			mel_filename = os.path.join(mel_dir, meta[1])
 			wav_filename = os.path.join(wav_dir, meta[0])
-			mel_output_filename = synth.synthesize(text, i+1, synth_dir, None, mel_filename)
+			mel_output_filename = synth.synthesize(text, None, i+1, synth_dir, None, mel_filename)
 
 			file.write('{}|{}|{}|{}\n'.format(text, mel_filename, mel_output_filename, wav_filename))
 	print('synthesized mel spectrograms at {}'.format(synth_dir))

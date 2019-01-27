@@ -15,13 +15,15 @@ class Synthesizer:
 		print('Constructing model: %s' % model_name)
 		inputs = tf.placeholder(tf.int32, [1, None], 'inputs')
 		input_lengths = tf.placeholder(tf.int32, [1], 'input_lengths')
-		targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'mel_targets')
+
 		with tf.variable_scope('model') as scope:
 			self.model = create_model(model_name, hparams)
 			if gta:
+				targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'mel_targets')
 				self.model.initialize(inputs, input_lengths, targets, gta=gta)
-			else:		
-				self.model.initialize(inputs, input_lengths)
+			else:
+				mel_targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'mel_targets')
+				self.model.initialize(inputs, input_lengths, mel_targets)
 			self.mel_outputs = self.model.mel_outputs
 			self.alignment = self.model.alignments[0]
 
@@ -33,16 +35,21 @@ class Synthesizer:
 		saver.restore(self.session, checkpoint_path)
 
 
-	def synthesize(self, text, index, out_dir, log_dir, mel_filename):
+	def synthesize(self, text, reference_mel, index, out_dir, log_dir, mel_filename):
 		cleaner_names = [x.strip() for x in hparams.cleaners.split(',')]
 		seq = text_to_sequence(text, cleaner_names)
 		feed_dict = {
 			self.model.inputs: [np.asarray(seq, dtype=np.int32)],
-			self.model.input_lengths: np.asarray([len(seq)], dtype=np.int32),
+			self.model.input_lengths: np.asarray([len(seq)], dtype=np.int32)
 		}
 
 		if self.gta:
-			feed_dict[self.model.mel_targets] = np.load(mel_filename).reshape(1, -1, 80)
+			reference_mel = np.load(mel_filename).reshape(1, -1, 80)
+		else:
+			reference_mel = [np.asarray(reference_mel, dtype=np.float32)]
+
+		# GTA not supported for now
+		feed_dict[self.model.mel_targets] = reference_mel
 
 		if self.gta or not hparams.predict_linear:
 			mels, alignment = self.session.run([self.mel_outputs, self.alignment], feed_dict=feed_dict)
