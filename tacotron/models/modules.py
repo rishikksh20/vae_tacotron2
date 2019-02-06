@@ -1,4 +1,4 @@
-import tensorflow as tf 
+import tensorflow as tf
 from tacotron.models.zoneout_LSTM import ZoneoutLSTMCell
 from tensorflow.contrib.rnn import LSTMBlockCell
 from hparams import hparams
@@ -39,7 +39,8 @@ def ReferenceEncoder(inputs, input_lengths, filters, kernel_size, strides, is_tr
            sequence_length=input_lengths,
            dtype=tf.float32
         )
-        return encoder_state
+        reference_state = tf.layers.dense(encoder_outputs[:,-1,:], 128, activation=tf.nn.tanh) # [N, 128]
+        return reference_state
 
 
 def conv1d(inputs, kernel_size, channels, activation, is_training, scope):
@@ -152,7 +153,7 @@ class Prenet:
 		self.layer_sizes = layer_sizes
 		self.is_training = is_training
 		self.activation = activation
-		
+
 		self.scope = 'prenet' if scope is None else scope
 
 	def __call__(self, inputs):
@@ -189,7 +190,7 @@ class DecoderRNN:
 		self.scope = 'decoder_rnn' if scope is None else scope
 
 		#Create a set of LSTM layers
-		self.rnn_layers = [ZoneoutLSTMCell(size, is_training, 
+		self.rnn_layers = [ZoneoutLSTMCell(size, is_training,
 			zoneout_factor_cell=zoneout,
 			zoneout_factor_output=zoneout) for i in range(layers)]
 
@@ -214,7 +215,7 @@ class FrameProjection:
 
 		self.shape = shape
 		self.activation = activation
-		
+
 		self.scope = 'Linear_projection' if scope is None else scope
 
 	def __call__(self, inputs):
@@ -241,7 +242,7 @@ class StopProjection:
 		"""
 		super(StopProjection, self).__init__()
 		self.is_training = is_training
-		
+
 		self.shape = shape
 		self.activation = activation
 		self.scope = 'stop_token_projection' if scope is None else scope
