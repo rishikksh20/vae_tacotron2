@@ -26,7 +26,7 @@ Tensorflow Implementation of [Learning latent representations for style control 
 	└── training_data	(1)
 	    ├── audio
 	    └── mels
- 
+
 
 
 
@@ -91,11 +91,14 @@ or
 **Note:**
 - This implementation not completly tested for all scenarios but training and synthesis with reference audio working.
 - Though it only tested on synthesize without GTA and with `eval` mode.
-- After training 250k step with 32 batch size on LJSpeech, KL error settled down near to zero (around 0.001) still not get good style transfer and control, may be because model trained on LJSpeech which is not quite expressive datasets, it might be produce good result on expressive dataset like Blizzard 2013.
+- After training 250k step with 32 batch size on LJSpeech, KL error settled down near to zero (around 0.001) still not get good style transfer and control, may be because this model trained on LJSpeech which is not quite expressive datasets and only have 24 hrs of data, it might be produce good result on expressive dataset like `Blizzard 2013 voice dataset` though author of the paper used 105 hrs of Blizzard Challenge 2013 dataset.
+- In my testing, I havn't get good results so far on style transfer side may be some more tweaking required, this implementation easily integrated with `wavenet` as well as `WaveRNN`.
 - Feel free to suggest some changes or even better raise PR.
 
 # Pretrained model and Samples:
 TODO
+Claimed Samples from research paper : http://home.ustc.edu.cn/~zyj008/ICASSP2019
+
 # References and Resources:
 - [Tensorflow original tacotron implementation](https://github.com/keithito/tacotron)
 - [Original tacotron paper](https://arxiv.org/pdf/1703.10135.pdf)
