@@ -23,11 +23,10 @@ Tensorflow Implementation of [Learning latent representations for style control 
 	│   │   ├── plots
 	│   │   └── wavs
 	│   └── natural
-	├── training_data	(1)
-	│   ├── audio
-	│   └── mels
-	└── wavenet_vocoder
-		└── models
+	└── training_data	(1)
+	    ├── audio
+	    └── mels
+ 
 
 
 
@@ -40,7 +39,7 @@ The previous tree shows what the current state of the repository.
 - Step **(3)**: Synthesize/Evaluate the Tacotron model. Gives the **tacotron_output** folder.
 
 
-# How to start
+# Requirements
 first, you need to have python 3.5 installed along with [Tensorflow v1.6](https://www.tensorflow.org/install/).
 
 next you can install the requirements :
