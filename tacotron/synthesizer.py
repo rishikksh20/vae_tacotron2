@@ -18,12 +18,20 @@ class Synthesizer:
 
 		with tf.variable_scope('model') as scope:
 			self.model = create_model(model_name, hparams)
+			if hparams.use_vae:
+				ref_targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'ref_targets')
 			if gta:
 				targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'mel_targets')
-				self.model.initialize(inputs, input_lengths, targets, gta=gta)
+				
+				if hparams.use_vae:
+					self.model.initialize(inputs, input_lengths, targets, gta=gta, reference_mel=ref_targets)
+				else:
+					self.model.initialize(inputs, input_lengths, targets, gta=gta)
 			else:
-				mel_targets = tf.placeholder(tf.float32, [1, None, hparams.num_mels], 'mel_targets')
-				self.model.initialize(inputs, input_lengths, mel_targets)
+				if hparams.use_vae:
+					self.model.initialize(inputs, input_lengths, reference_mel=ref_targets)
+				else:
+					self.model.initialize(inputs, input_lengths)
 			self.mel_outputs = self.model.mel_outputs
 			self.alignment = self.model.alignments[0]
 
@@ -35,7 +43,7 @@ class Synthesizer:
 		saver.restore(self.session, checkpoint_path)
 
 
-	def synthesize(self, text, reference_mel, index, out_dir, log_dir, mel_filename):
+	def synthesize(self, text, index, out_dir, log_dir, mel_filename, reference_mel):
 		cleaner_names = [x.strip() for x in hparams.cleaners.split(',')]
 		seq = text_to_sequence(text, cleaner_names)
 		feed_dict = {
@@ -44,12 +52,12 @@ class Synthesizer:
 		}
 
 		if self.gta:
-			reference_mel = np.load(mel_filename).reshape(1, -1, 80)
-		else:
+			feed_dict[self.model.mel_targets] = np.load(mel_filename).reshape(1, -1, 80)
+			feed_dict[self.model.reference_mel] = np.load(mel_filename).reshape(1, -1, 80)
+		elif hparams.use_vae:
 			reference_mel = [np.asarray(reference_mel, dtype=np.float32)]
+			feed_dict[self.model.reference_mel] = reference_mel
 
-		# GTA not supported for now
-		feed_dict[self.model.mel_targets] = reference_mel
 
 		if self.gta or not hparams.predict_linear:
 			mels, alignment = self.session.run([self.mel_outputs, self.alignment], feed_dict=feed_dict)
