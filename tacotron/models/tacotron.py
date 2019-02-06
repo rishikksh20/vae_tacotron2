@@ -1,4 +1,4 @@
-import tensorflow as tf 
+import tensorflow as tf
 from tacotron.utils.symbols import symbols
 from tacotron.utils.infolog import log
 from tacotron.models.helpers import TacoTrainingHelper, TacoTestHelper
@@ -17,7 +17,7 @@ class Tacotron():
 	def __init__(self, hparams):
 		self._hparams = hparams
 
-	def initialize(self, inputs, input_lengths, mel_targets=None, mel_lengths=None, stop_token_targets=None, linear_targets=None, gta=False):
+	def initialize(self, inputs, input_lengths, mel_targets=None, mel_lengths=None, stop_token_targets=None, linear_targets=None, gta=False, reference_mel=None):
 		"""
 		Initializes the model for inference
 
@@ -63,8 +63,11 @@ class Tacotron():
 
 			encoder_outputs = encoder_cell(embedded_inputs, input_lengths)
 			if hp.use_vae:
+				if is_training:
+					reference_mel = mel_targets
+				
 				style_embeddings, mu, log_var = VAE(
-					inputs=mel_targets,
+					inputs=reference_mel,
 					input_lengths=mel_lengths,
 					filters=hp.filters,
 					kernel_size=(3, 3),
@@ -89,7 +92,7 @@ class Tacotron():
 			prenet = Prenet(is_training, layer_sizes=hp.prenet_layers, scope='decoder_prenet')
 			#Attention Mechanism
 			attention_mechanism = LocationSensitiveAttention(hp.attention_dim, encoder_outputs,
-				mask_encoder=hp.mask_encoder, memory_sequence_length=input_lengths, smoothing=hp.smoothing, 
+				mask_encoder=hp.mask_encoder, memory_sequence_length=input_lengths, smoothing=hp.smoothing,
 				cumulate_weights=hp.cumulative_weights)
 			#Decoder LSTM Cells
 			decoder_lstm = DecoderRNN(is_training, layers=hp.decoder_layers,
@@ -131,20 +134,20 @@ class Tacotron():
 				maximum_iterations=max_iters)
 
 
-			# Reshape outputs to be one output per entry 
+			# Reshape outputs to be one output per entry
 			#==> [batch_size, non_reduced_decoder_steps (decoder_steps * r), num_mels]
 			decoder_output = tf.reshape(frames_prediction, [batch_size, -1, hp.num_mels])
 			stop_token_prediction = tf.reshape(stop_token_prediction, [batch_size, -1])
 
-		
+
 			#Postnet
-			postnet = Postnet(is_training, kernel_size=hp.postnet_kernel_size, 
+			postnet = Postnet(is_training, kernel_size=hp.postnet_kernel_size,
 				channels=hp.postnet_channels, scope='postnet_convolutions')
 
 			#Compute residual using post-net ==> [batch_size, decoder_steps * r, postnet_channels]
 			residual = postnet(decoder_output)
 
-			#Project residual to same dimension as mel spectrogram 
+			#Project residual to same dimension as mel spectrogram
 			#==> [batch_size, decoder_steps * r, num_mels]
 			residual_projection = FrameProjection(hp.num_mels, scope='postnet_projection')
 			projected_residual = residual_projection(residual)
@@ -176,6 +179,7 @@ class Tacotron():
 			self.stop_token_prediction = stop_token_prediction
 			self.stop_token_targets = stop_token_targets
 			self.mel_outputs = mel_outputs
+			self.reference_mel = reference_mel
 			if post_condition:
 				self.linear_outputs = linear_outputs
 				self.linear_targets = linear_targets
@@ -290,9 +294,9 @@ class Tacotron():
 		hp = self._hparams
 
 		#Compute natural exponential decay
-		lr = tf.train.exponential_decay(init_lr, 
+		lr = tf.train.exponential_decay(init_lr,
 			global_step - hp.tacotron_start_decay, #lr = 1e-3 at step 50k
-			self.decay_steps, 
+			self.decay_steps,
 			self.decay_rate, #lr = 1e-5 around step 300k
 			name='exponential_decay')
 

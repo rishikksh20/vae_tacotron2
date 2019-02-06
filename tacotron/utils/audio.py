@@ -1,16 +1,16 @@
 import librosa
 import librosa.filters
-import numpy as np 
+import numpy as np
 from scipy import signal
-from tacotron.hparams import hparams
-import tensorflow as tf 
+from hparams import hparams
+import tensorflow as tf
 
 
 def load_wav(path):
 	return librosa.core.load(path, sr=hparams.sample_rate)[0]
 
 def save_wav(wav, path):
-	wav *= 32767 / max(0.01, np.max(np.abs(wav))) 
+	wav *= 32767 / max(0.01, np.max(np.abs(wav)))
 	librosa.output.write_wav(path, wav.astype(np.int16), hparams.sample_rate)
 
 def trim_silence(wav):
@@ -40,7 +40,7 @@ def melspectrogram(wav):
 	if hparams.mel_normalization:
 		return _normalize(S)
 	return S
-	
+
 
 def inv_mel_spectrogram(mel_spectrogram):
 	'''Converts mel spectrogram to waveform using librosa'''
@@ -118,7 +118,7 @@ def _denormalize(D):
 	if hparams.allow_clipping_in_normalization:
 		if hparams.symmetric_mels:
 			return (((np.clip(D, -hparams.max_abs_value,
-				hparams.max_abs_value) + hparams.max_abs_value) * -hparams.min_level_db / (2 * hparams.max_abs_value)) 
+				hparams.max_abs_value) + hparams.max_abs_value) * -hparams.min_level_db / (2 * hparams.max_abs_value))
 				+ hparams.min_level_db)
 		else:
 			return ((np.clip(D, 0, hparams.max_abs_value) * -hparams.min_level_db / hparams.max_abs_value) + hparams.min_level_db)

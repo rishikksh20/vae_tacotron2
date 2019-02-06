@@ -23,6 +23,7 @@ hparams = tf.contrib.training.HParams(
 	frame_shift_ms = None,
 
 	#Mel and Linear spectrograms normalization/scaling and clipping
+	mel_normalization = False,
 	signal_normalization = True,
 	allow_clipping_in_normalization = True, #Only relevant if mel_normalization = True
 	symmetric_mels = True, #Whether to scale the data to be symmetric around 0
