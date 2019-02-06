@@ -25,7 +25,7 @@ def run_eval(args, checkpoint_path, output_dir):
 	with open(os.path.join(eval_dir, 'map.txt'), 'w') as file:
 		for i, text in enumerate(tqdm(hparams.sentences)):
 			start = time.time()
-			mel_filename = synth.synthesize(text, None, i+1, eval_dir, log_dir, None, reference_mel)
+			mel_filename = synth.synthesize(text, i+1, eval_dir, log_dir, None, reference_mel)
 
 			file.write('{}|{}\n'.format(text, mel_filename))
 	print('synthesized mel spectrograms at {}'.format(eval_dir))

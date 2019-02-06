@@ -17,7 +17,7 @@ class Tacotron():
 	def __init__(self, hparams):
 		self._hparams = hparams
 
-	def initialize(self, inputs, input_lengths, mel_targets=None, mel_lengths=None, stop_token_targets=None, linear_targets=None, gta=False reference_mel=None):
+	def initialize(self, inputs, input_lengths, mel_targets=None, mel_lengths=None, stop_token_targets=None, linear_targets=None, gta=False, reference_mel=None):
 		"""
 		Initializes the model for inference
 
@@ -64,7 +64,8 @@ class Tacotron():
 			encoder_outputs = encoder_cell(embedded_inputs, input_lengths)
 			if hp.use_vae:
 				if is_training:
-        			reference_mel = mel_targets
+					reference_mel = mel_targets
+				
 				style_embeddings, mu, log_var = VAE(
 					inputs=reference_mel,
 					input_lengths=mel_lengths,
