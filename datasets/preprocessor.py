@@ -2,9 +2,9 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from datasets import audio
 import os
-import numpy as np 
+import numpy as np
 from hparams import hparams
-#from wavenet_vocoder.util import mulaw_quantize, mulaw, is_mulaw, is_mulaw_quantize
+from datasets.util import mulaw_quantize, mulaw, is_mulaw, is_mulaw_quantize
 
 
 def build_from_path(input_dirs, mel_dir, linear_dir, wav_dir, n_jobs=12, tqdm=lambda x: x):
@@ -23,7 +23,7 @@ def build_from_path(input_dirs, mel_dir, linear_dir, wav_dir, n_jobs=12, tqdm=la
 		- A list of tuple describing the train examples. this should be written to train.txt
 	"""
 
-	# We use ProcessPoolExecutor to parallelize across processes, this is just for 
+	# We use ProcessPoolExecutor to parallelize across processes, this is just for
 	# optimization purposes and it can be omited
 	executor = ProcessPoolExecutor(max_workers=n_jobs)
 	futures = []
@@ -75,34 +75,30 @@ def _process_utterance(mel_dir, linear_dir, wav_dir, index, wav_path, text):
 	if hparams.trim_silence:
 		wav = audio.trim_silence(wav)
 
-	out = wav
-	constant_values = 0.
-	out_dtype = np.float32
-
 	#Mu-law quantize
-	# if is_mulaw_quantize(hparams.input_type):
-	# 	#[0, quantize_channels)
-	# 	out = mulaw_quantize(wav, hparams.quantize_channels)
-	#
-	# 	#Trim silences
-	# 	start, end = audio.start_and_end_indices(out, hparams.silence_threshold)
-	# 	wav = wav[start: end]
-	# 	out = out[start: end]
-	#
-	# 	constant_values = mulaw_quantize(0, hparams.quantize_channels)
-	# 	out_dtype = np.int16
-	#
-	# elif is_mulaw(hparams.input_type):
-	# 	#[-1, 1]
-	# 	out = mulaw(wav, hparams.quantize_channels)
-	# 	constant_values = mulaw(0., hparams.quantize_channels)
-	# 	out_dtype = np.float32
-	#
-	# else:
-	# 	#[-1, 1]
-	# 	out = wav
-	# 	constant_values = 0.
-	# 	out_dtype = np.float32
+	if is_mulaw_quantize(hparams.input_type):
+		#[0, quantize_channels)
+		out = mulaw_quantize(wav, hparams.quantize_channels)
+
+		#Trim silences
+		start, end = audio.start_and_end_indices(out, hparams.silence_threshold)
+		wav = wav[start: end]
+		out = out[start: end]
+
+		constant_values = mulaw_quantize(0, hparams.quantize_channels)
+		out_dtype = np.int16
+
+	elif is_mulaw(hparams.input_type):
+		#[-1, 1]
+		out = mulaw(wav, hparams.quantize_channels)
+		constant_values = mulaw(0., hparams.quantize_channels)
+		out_dtype = np.float32
+
+	else:
+		#[-1, 1]
+		out = wav
+		constant_values = 0.
+		out_dtype = np.float32
 
 	# Compute the mel scale spectrogram from the wav
 	mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
@@ -110,7 +106,7 @@ def _process_utterance(mel_dir, linear_dir, wav_dir, index, wav_path, text):
 
 	#Compute the linear scale spectrogram from the wav
 	linear_spectrogram = audio.linearspectrogram(wav).astype(np.float32)
-	linear_frames = linear_spectrogram.shape[1] 
+	linear_frames = linear_spectrogram.shape[1]
 
 	#sanity check
 	assert linear_frames == mel_frames
