@@ -1,5 +1,5 @@
 # VAE Tacotron-2:
-Tensorflow Implementation of [Learning latent representations for style control and transfer in end-to-end speech synthesis](https://arxiv.org/pdf/1812.04342.pdf)
+Unofficial Implementation of [Learning latent representations for style control and transfer in end-to-end speech synthesis](https://arxiv.org/pdf/1812.04342.pdf)
 
 
 # Repository Structure:
